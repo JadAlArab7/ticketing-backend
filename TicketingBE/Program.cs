@@ -1,8 +1,15 @@
+using TicketingBE.Extensions;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+// Register Dependency Injection for three-tier architecture
+builder.Services.AddDataAccessLayer();    // DAL - Data Access Layer
+builder.Services.AddBusinessLogicLayer(); // BLL - Business Logic Layer
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
