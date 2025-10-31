@@ -160,5 +160,92 @@ namespace TicketingBE.DAL.Helpers
             
             return value.ToString();
         }
+
+        // DbDataReader overloads
+
+        public static int GetInt32(DbDataReader reader, string columnName)
+        {
+            return GetInt32(reader[columnName]);
+        }
+
+        public static int? GetNullableInt32(DbDataReader reader, string columnName)
+        {
+            return GetNullableInt32(reader[columnName]);
+        }
+
+        public static long GetInt64(DbDataReader reader, string columnName)
+        {
+            return GetInt64(reader[columnName]);
+        }
+
+        public static long? GetNullableInt64(DbDataReader reader, string columnName)
+        {
+            return GetNullableInt64(reader[columnName]);
+        }
+
+        public static string GetString(DbDataReader reader, string columnName)
+        {
+            return GetString(reader[columnName]);
+        }
+
+        public static string? GetNullableString(DbDataReader reader, string columnName)
+        {
+            return GetNullableString(reader[columnName]);
+        }
+
+        public static bool GetBoolean(DbDataReader reader, string columnName)
+        {
+            return GetBoolean(reader[columnName]);
+        }
+
+        public static bool? GetNullableBoolean(DbDataReader reader, string columnName)
+        {
+            return GetNullableBoolean(reader[columnName]);
+        }
+
+        public static DateTime GetDateTime(DbDataReader reader, string columnName)
+        {
+            return GetDateTime(reader[columnName]);
+        }
+
+        public static DateTime? GetNullableDateTime(DbDataReader reader, string columnName)
+        {
+            return GetNullableDateTime(reader[columnName]);
+        }
+
+        public static Guid GetGuid(DbDataReader reader, string columnName)
+        {
+            return GetGuid(reader[columnName]);
+        }
+
+        public static Guid? GetNullableGuid(DbDataReader reader, string columnName)
+        {
+            return GetNullableGuid(reader[columnName]);
+        }
+
+        public static decimal GetDecimal(DbDataReader reader, string columnName)
+        {
+            return GetDecimal(reader[columnName]);
+        }
+
+        public static decimal? GetNullableDecimal(DbDataReader reader, string columnName)
+        {
+            return GetNullableDecimal(reader[columnName]);
+        }
+
+        public static byte[]? GetByteArray(DbDataReader reader, string columnName)
+        {
+            return GetByteArray(reader[columnName]);
+        }
+
+        public static string GetGuidAsString(DbDataReader reader, string columnName)
+        {
+            return GetGuidAsString(reader[columnName]);
+        }
+
+        public static string? GetNullableGuidAsString(DbDataReader reader, string columnName)
+        {
+            return GetNullableGuidAsString(reader[columnName]);
+        }
     }
 }

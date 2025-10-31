@@ -63,5 +63,19 @@ namespace TicketingBE.BLL.Interfaces
         /// <param name="request">The login credentials (username and password)</param>
         /// <returns>LoginResponseDto with user info and token if successful, null otherwise</returns>
         Task<LoginResponseDto?> LoginAsync(LoginRequestDto request);
+
+        /// <summary>
+        /// Retrieves users in the parent department (report-user API)
+        /// Extracts parentDepartmentId from JWT claims
+        /// </summary>
+        /// <returns>List of users in parent department</returns>
+        Task<IEnumerable<UserDto>> GetReportUsersAsync();
+
+        /// <summary>
+        /// Retrieves users in same department or child departments (rfi-user API)
+        /// Extracts departmentId from JWT claims
+        /// </summary>
+        /// <returns>List of users in same or child departments</returns>
+        Task<IEnumerable<UserDto>> GetRfiUsersAsync();
     }
 }

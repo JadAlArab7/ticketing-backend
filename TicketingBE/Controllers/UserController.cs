@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TicketingBE.BLL.Interfaces;
 using TicketingBE.Models;
@@ -238,6 +239,48 @@ namespace TicketingBE.Controllers
             {
                 _logger.LogError(ex, "Error during login");
                 return StatusCode(500, "An error occurred during login");
+            }
+        }
+
+        /// <summary>
+        /// GET: api/User/report-user
+        /// Retrieves users in the parent department of the current user
+        /// Requires JWT authentication
+        /// </summary>
+        [Authorize]
+        [HttpGet("report-user")]
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetReportUsers()
+        {
+            try
+            {
+                var users = await _userService.GetReportUsersAsync();
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving report users");
+                return StatusCode(500, "An error occurred while retrieving report users");
+            }
+        }
+
+        /// <summary>
+        /// GET: api/User/rfi-user
+        /// Retrieves users in the same department or child departments of the current user
+        /// Requires JWT authentication
+        /// </summary>
+        [Authorize]
+        [HttpGet("rfi-user")]
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetRfiUsers()
+        {
+            try
+            {
+                var users = await _userService.GetRfiUsersAsync();
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving RFI users");
+                return StatusCode(500, "An error occurred while retrieving RFI users");
             }
         }
     }

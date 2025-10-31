@@ -56,5 +56,21 @@ namespace TicketingBE.DAL.Interfaces
         /// <param name="password">The password</param>
         /// <returns>The user with department information if authentication successful, null otherwise</returns>
         Task<User?> AuthenticateUserAsync(string username, string password);
+
+        /// <summary>
+        /// Retrieves all users belonging to a specific parent department
+        /// Used by report-user API
+        /// </summary>
+        /// <param name="parentDepartmentId">The parent department ID</param>
+        /// <returns>List of users in the parent department</returns>
+        Task<IEnumerable<User>> GetUsersByParentDepartmentAsync(string parentDepartmentId);
+
+        /// <summary>
+        /// Retrieves all users in the same department or child departments
+        /// Used by rfi-user API
+        /// </summary>
+        /// <param name="departmentId">The department ID to filter by</param>
+        /// <returns>List of users in same department or child departments</returns>
+        Task<IEnumerable<User>> GetUsersByDepartmentOrChildrenAsync(string departmentId);
     }
 }

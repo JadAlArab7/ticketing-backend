@@ -9,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+// Register HttpContextAccessor for accessing JWT claims
+builder.Services.AddHttpContextAccessor();
+
 // Register Dependency Injection for three-tier architecture
 builder.Services.AddDataAccessLayer();    // DAL - Data Access Layer
 builder.Services.AddBusinessLogicLayer(); // BLL - Business Logic Layer

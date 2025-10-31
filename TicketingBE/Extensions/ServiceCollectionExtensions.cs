@@ -24,10 +24,10 @@ namespace TicketingBE.Extensions
             // Register all repository interfaces and their implementations
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IDepartmentRepository, DepartmentRepository>();
-            
-            // Add more repositories here as your application grows
-            // services.AddScoped<ITicketRepository, TicketRepository>();
-            // services.AddScoped<ICommentRepository, CommentRepository>();
+            services.AddScoped<ITicketTypeRepository, TicketTypeRepository>();
+            services.AddScoped<ITicketRepository, TicketRepository>();
+            services.AddScoped<ITicketAssigneeRepository, TicketAssigneeRepository>();
+            services.AddScoped<ITicketFileRepository, TicketFileRepository>();
             
             return services;
         }
@@ -42,10 +42,8 @@ namespace TicketingBE.Extensions
             // Register all service interfaces and their implementations
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IDepartmentService, DepartmentService>();
-            
-            // Add more services here as your application grows
-            // services.AddScoped<ITicketService, TicketService>();
-            // services.AddScoped<ICommentService, CommentService>();
+            services.AddScoped<ITicketTypeService, TicketTypeService>();
+            services.AddScoped<ITicketService, TicketService>();
             
             return services;
         }

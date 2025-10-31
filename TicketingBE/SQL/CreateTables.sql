@@ -24,6 +24,11 @@ CREATE TABLE tck.ticket_types(
 	name TEXT check (name <> '')
 );
 
+CREATE TABLE tck.ticket_status(
+	id UUID PRIMARY KEY,
+	name TEXT check (name <> '')
+);
+
 CREATE TABLE tck.tickets(
 	id UUID PRIMARY KEY,
 	ticket_type_id UUID NOT NULL REFERENCES tck.ticket_types(id),
@@ -32,12 +37,8 @@ CREATE TABLE tck.tickets(
 	alert_buffer TIMESTAMP,
 	deadline TIMESTAMP,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	ticket_status UUID REFERENCES tck.ticket_status(id),
 	created_by UUID NOT NULL REFERENCES tck.departments(id)
-);
-
-CREATE TABLE tck.ticket_status(
-	id UUID PRIMARY KEY,
-	name TEXT check (name <> '')
 );
 
 CREATE TABLE tck.ticket_status_transitions(
@@ -56,7 +57,6 @@ CREATE TABLE tck.ticket_assignees(
 	ticket_id UUID REFERENCES tck.tickets(id),
 	department_id UUID REFERENCES tck.departments(id),
 	ticket_assignee_type UUID REFERENCES tck.ticket_assignee_type(id),
-	ticket_status UUID REFERENCES tck.ticket_status(id),
 	PRIMARY KEY (ticket_id, department_id)
 );
 

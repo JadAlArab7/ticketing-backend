@@ -16,14 +16,18 @@ namespace TicketingBE.BLL.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IDepartmentRepository _departmentRepository;
         private readonly ILogger<UserService> _logger;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UserService(IUserRepository userRepository, ILogger<UserService> logger, IConfiguration configuration)
+        public UserService(IUserRepository userRepository, IDepartmentRepository departmentRepository, ILogger<UserService> logger, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _userRepository = userRepository;
+            _departmentRepository = departmentRepository;
             _logger = logger;
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         /// <summary>
@@ -245,7 +249,7 @@ namespace TicketingBE.BLL.Services
                 }
 
                 // Generate JWT token
-                var token = GenerateJwtToken(user);
+                var token = await GenerateJwtTokenAsync(user);
 
                 _logger.LogInformation("Successful login for user: {Username}", user.Username);
 
@@ -269,7 +273,7 @@ namespace TicketingBE.BLL.Services
         /// <summary>
         /// Generates a JWT token for authenticated user
         /// </summary>
-        private string GenerateJwtToken(User user)
+        private async Task<string> GenerateJwtTokenAsync(User user)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"];
@@ -280,6 +284,24 @@ namespace TicketingBE.BLL.Services
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
+            // Fetch parent department ID from the user's department
+            string parentDepartmentId = string.Empty;
+            try
+            {
+                if (Guid.TryParse(user.DepartmentId, out var deptGuid))
+                {
+                    var department = await _departmentRepository.GetDepartmentByIdAsync(deptGuid);
+                    if (department?.ParentDepartmentId.HasValue == true)
+                    {
+                        parentDepartmentId = department.ParentDepartmentId.Value.ToString();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to fetch parent department for user {UserId}", user.Id);
+            }
+
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -287,7 +309,9 @@ namespace TicketingBE.BLL.Services
                 new Claim("userId", user.Id.ToString()),
                 new Claim("username", user.Username),
                 new Claim("department", user.DepartmentName),
-                new Claim("departmentType", user.DepartmentType)
+                new Claim("departmentType", user.DepartmentType),
+                new Claim("departmentId", user.DepartmentId),
+                new Claim("parentDepartmentId", parentDepartmentId)
             };
 
             var token = new JwtSecurityToken(
@@ -299,6 +323,78 @@ namespace TicketingBE.BLL.Services
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        /// <summary>
+        /// Retrieves users in the parent department (report-user API)
+        /// Extracts parentDepartmentId from JWT claims
+        /// </summary>
+        public async Task<IEnumerable<UserDto>> GetReportUsersAsync()
+        {
+            try
+            {
+                // Extract parentDepartmentId from JWT claims
+                var parentDepartmentId = _httpContextAccessor.HttpContext?.User.FindFirst("parentDepartmentId")?.Value;
+
+                if (string.IsNullOrWhiteSpace(parentDepartmentId))
+                {
+                    _logger.LogWarning("Parent department ID not found in JWT claims");
+                    return Enumerable.Empty<UserDto>();
+                }
+
+                // Get users from repository
+                var users = await _userRepository.GetUsersByParentDepartmentAsync(parentDepartmentId);
+
+                // Map to DTO
+                return users.Select(u => new UserDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    DepartmentName = u.DepartmentName,
+                    DepartmentId = u.DepartmentId
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving report users");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves users in same department or child departments (rfi-user API)
+        /// Extracts departmentId from JWT claims
+        /// </summary>
+        public async Task<IEnumerable<UserDto>> GetRfiUsersAsync()
+        {
+            try
+            {
+                // Extract departmentId from JWT claims
+                var departmentId = _httpContextAccessor.HttpContext?.User.FindFirst("departmentId")?.Value;
+
+                if (string.IsNullOrWhiteSpace(departmentId))
+                {
+                    _logger.LogWarning("Department ID not found in JWT claims");
+                    return Enumerable.Empty<UserDto>();
+                }
+
+                // Get users from repository
+                var users = await _userRepository.GetUsersByDepartmentOrChildrenAsync(departmentId);
+
+                // Map to DTO
+                return users.Select(u => new UserDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    DepartmentName = u.DepartmentName,
+                    DepartmentId = u.DepartmentId
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving RFI users");
+                throw;
+            }
         }
     }
 }

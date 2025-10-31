@@ -241,5 +241,89 @@ namespace TicketingBE.DAL.Repositories
                 _sqlHelper.CreateParam("@password", password));
             });
         }
+
+        /// <summary>
+        /// Retrieves all users belonging to a specific parent department
+        /// Used by report-user API
+        /// </summary>
+        public async Task<IEnumerable<User>> GetUsersByParentDepartmentAsync(string parentDepartmentId)
+        {
+            string query = @"
+                SELECT 
+                    u.id, 
+                    u.username, 
+                    u.password,
+                    u.department_id,
+                    d.name as department_name,
+                    dt.name as department_type
+                FROM tck.users u
+                INNER JOIN tck.departments d ON u.department_id = d.id
+                INNER JOIN tck.department_types dt ON d.department_type_id = dt.id
+                WHERE d.parent_department_id = @parentDepartmentId
+                ORDER BY u.username";
+
+            return await Task.Run(() =>
+            {
+                return _sqlHelper.ExecuteReader<List<User>>(query, (dataReader) =>
+                {
+                    var users = new List<User>();
+                    while (dataReader.Read())
+                    {
+                        users.Add(new User
+                        {
+                            Id = TypeHelper.GetGuidAsString(dataReader["id"]),
+                            Username = TypeHelper.GetString(dataReader["username"]),
+                            Password = TypeHelper.GetString(dataReader["password"]),
+                            DepartmentId = TypeHelper.GetGuidAsString(dataReader["department_id"]),
+                            DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
+                            DepartmentType = TypeHelper.GetString(dataReader["department_type"])
+                        });
+                    }
+                    return users;
+                }, _sqlHelper.CreateParam("@parentDepartmentId", Guid.Parse(parentDepartmentId)));
+            });
+        }
+
+        /// <summary>
+        /// Retrieves all users in the same department or child departments
+        /// Used by rfi-user API
+        /// </summary>
+        public async Task<IEnumerable<User>> GetUsersByDepartmentOrChildrenAsync(string departmentId)
+        {
+            string query = @"
+                SELECT 
+                    u.id, 
+                    u.username, 
+                    u.password,
+                    u.department_id,
+                    d.name as department_name,
+                    dt.name as department_type
+                FROM tck.users u
+                INNER JOIN tck.departments d ON u.department_id = d.id
+                INNER JOIN tck.department_types dt ON d.department_type_id = dt.id
+                WHERE d.id = @departmentId OR d.parent_department_id = @departmentId
+                ORDER BY u.username";
+
+            return await Task.Run(() =>
+            {
+                return _sqlHelper.ExecuteReader<List<User>>(query, (dataReader) =>
+                {
+                    var users = new List<User>();
+                    while (dataReader.Read())
+                    {
+                        users.Add(new User
+                        {
+                            Id = TypeHelper.GetGuidAsString(dataReader["id"]),
+                            Username = TypeHelper.GetString(dataReader["username"]),
+                            Password = TypeHelper.GetString(dataReader["password"]),
+                            DepartmentId = TypeHelper.GetGuidAsString(dataReader["department_id"]),
+                            DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
+                            DepartmentType = TypeHelper.GetString(dataReader["department_type"])
+                        });
+                    }
+                    return users;
+                }, _sqlHelper.CreateParam("@departmentId", Guid.Parse(departmentId)));
+            });
+        }
     }
 }

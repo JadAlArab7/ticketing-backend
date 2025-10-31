@@ -295,6 +295,11 @@ namespace TicketingBE.DAL.Helpers
             return param;
         }
 
+        public DbParameter CreateParam(string paramName, object value)
+        {
+            return new NpgsqlParameter(paramName, value ?? DBNull.Value);
+        }
+
         public DbParameter CreateParam(string paramName, decimal value)
         {
             NpgsqlParameter param = new NpgsqlParameter(paramName, NpgsqlDbType.Numeric);
@@ -342,6 +347,111 @@ namespace TicketingBE.DAL.Helpers
             NpgsqlParameter paramOut = new NpgsqlParameter(paramName, dbType, size);
             paramOut.Direction = ParameterDirection.Output;
             return paramOut;
+        }
+
+        // Async methods
+
+        /// <summary>
+        /// Gets a new connection
+        /// </summary>
+        public NpgsqlConnection GetConnection()
+        {
+            return new NpgsqlConnection(_connectionString);
+        }
+
+        /// <summary>
+        /// Executes a non-query command asynchronously
+        /// </summary>
+        public async Task<int> ExecuteNonQueryAsync(string query, DbParameter[] parameters, NpgsqlTransaction? transaction = null)
+        {
+            NpgsqlConnection? conn = null;
+            bool shouldCloseConnection = false;
+
+            try
+            {
+                if (transaction != null)
+                {
+                    conn = transaction.Connection!;
+                }
+                else
+                {
+                    conn = new NpgsqlConnection(_connectionString);
+                    await conn.OpenAsync();
+                    shouldCloseConnection = true;
+                }
+
+                using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn, transaction))
+                {
+                    if (parameters != null)
+                    {
+                        foreach (DbParameter param in parameters)
+                        {
+                            cmd.Parameters.Add((NpgsqlParameter)param);
+                        }
+                    }
+                    return await cmd.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error executing query: {query}", ex);
+            }
+            finally
+            {
+                if (shouldCloseConnection && conn != null)
+                {
+                    await conn.CloseAsync();
+                    await conn.DisposeAsync();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Executes a query asynchronously and returns a list of results using a custom data reader function
+        /// </summary>
+        public async Task<IEnumerable<T>> ExecuteReaderAsync<T>(string query, Func<DbDataReader, T> dataReaderFn, DbParameter[]? parameters = null)
+        {
+            NpgsqlConnection? conn = null;
+            List<T> results = new List<T>();
+
+            try
+            {
+                conn = new NpgsqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                using (NpgsqlCommand cmd = new NpgsqlCommand(query, conn))
+                {
+                    if (parameters != null)
+                    {
+                        foreach (DbParameter param in parameters)
+                        {
+                            cmd.Parameters.Add((NpgsqlParameter)param);
+                        }
+                    }
+
+                    using (NpgsqlDataReader dataReader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await dataReader.ReadAsync())
+                        {
+                            results.Add(dataReaderFn(dataReader));
+                        }
+                    }
+                }
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error executing query: {query}", ex);
+            }
+            finally
+            {
+                if (conn != null)
+                {
+                    await conn.CloseAsync();
+                    await conn.DisposeAsync();
+                }
+            }
         }
     }
 }
