@@ -252,8 +252,7 @@ namespace TicketingBE.DAL.Repositories
                         subject = @subject,
                         description = @description,
                         alert_buffer = @alert_buffer,
-                        deadline = @deadline,
-                        ticket_status = @ticket_status
+                        deadline = @deadline
                     WHERE id = @id";
 
                 var parameters = new[]
@@ -263,8 +262,8 @@ namespace TicketingBE.DAL.Repositories
                     _sqlHelper.CreateParam("@subject", ticket.Subject),
                     _sqlHelper.CreateParam("@description", ticket.Description),
                     _sqlHelper.CreateParam("@alert_buffer", ticket.AlertBuffer.HasValue ? DateTime.SpecifyKind(ticket.AlertBuffer.Value, DateTimeKind.Unspecified) : DBNull.Value),
-                    _sqlHelper.CreateParam("@deadline", ticket.Deadline.HasValue ? DateTime.SpecifyKind(ticket.Deadline.Value, DateTimeKind.Unspecified) : DBNull.Value),
-                    _sqlHelper.CreateParam("@ticket_status", Guid.Parse(ticket.TicketStatus))
+                    _sqlHelper.CreateParam("@deadline", ticket.Deadline.HasValue ? DateTime.SpecifyKind(ticket.Deadline.Value, DateTimeKind.Unspecified) : DBNull.Value)
+                   // _sqlHelper.CreateParam("@ticket_status", Guid.Parse(ticket.TicketStatus))
                 };
 
                 int rowsAffected = await _sqlHelper.ExecuteNonQueryAsync(updateQuery, parameters, transaction);
@@ -275,14 +274,15 @@ namespace TicketingBE.DAL.Repositories
                     return false;
                 }
 
-                // Remove all existing assignees and insert new ones
+                // Remove all existing assignees
                 await RemoveAllAssigneesAsync(ticket.Id, transaction);
-                foreach (var assignee in ticket.Assignees)
+                
+                // Insert new assignee if provided
+                if (!string.IsNullOrWhiteSpace(ticket.AssigneeDepartmentId))
                 {
-                    await InsertAssigneeAsync(ticket.Id, assignee.DepartmentId, assignee.TicketAssigneeType, transaction);
+                    string defaultAssigneeTypeId = "e58efe89-2c1d-4102-b328-25ecdfb600dd";
+                    await InsertAssigneeAsync(ticket.Id, ticket.AssigneeDepartmentId, defaultAssigneeTypeId, transaction);
                 }
-
-                // Note: Files are not updated here - they should be managed separately via add/delete file endpoints
 
                 await transaction.CommitAsync();
                 _logger.LogInformation("Successfully updated ticket with ID {TicketId}", ticket.Id);

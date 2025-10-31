@@ -137,10 +137,11 @@ namespace TicketingBE.Controllers
         /// Update an existing ticket
         /// </summary>
         /// <param name="id">Ticket ID</param>
-        /// <param name="ticket">Updated ticket data</param>
+        /// <param name="formData">Updated ticket data</param>
         /// <returns>Success status</returns>
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTicket(string id, [FromBody] UpdateTicketDto ticket)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateTicket(string id, [FromForm] UpdateTicketFormDto formData)
         {
             try
             {
@@ -149,10 +150,17 @@ namespace TicketingBE.Controllers
                     return BadRequest(ModelState);
                 }
 
-                if (id != ticket.Id)
+                var ticket = new UpdateTicketDto
                 {
-                    return BadRequest(new { message = "ID mismatch" });
-                }
+                    Id = id,
+                    TicketTypeId = formData.TicketTypeId,
+                    Subject = formData.Subject,
+                    Description = formData.Description,
+                    AlertBuffer = formData.AlertBuffer,
+                    Deadline = formData.Deadline,
+                    TicketStatus = formData.TicketStatus,
+                    AssigneeDepartmentId = formData.AssigneeDepartmentId
+                };
 
                 var result = await _ticketService.UpdateTicketAsync(ticket);
                 
