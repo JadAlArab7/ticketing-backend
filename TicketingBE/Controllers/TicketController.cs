@@ -93,32 +93,9 @@ namespace TicketingBE.Controllers
                     Description = formData.Description,
                     AlertBuffer = formData.AlertBuffer,
                     Deadline = formData.Deadline,
-                    TicketStatus = formData.TicketStatus,
-                    Assignees = new List<CreateTicketAssigneeDto>(),
+                    AssigneeDepartmentId = formData.AssigneeDepartmentId,
                     Files = new List<CreateTicketFileDto>()
                 };
-
-                // Parse assignees from JSON string
-                if (!string.IsNullOrWhiteSpace(formData.Assignees))
-                {
-                    try
-                    {
-                        var assignees = System.Text.Json.JsonSerializer.Deserialize<List<AssigneeFormData>>(formData.Assignees);
-                        if (assignees != null)
-                        {
-                            ticket.Assignees = assignees.Select(a => new CreateTicketAssigneeDto
-                            {
-                                DepartmentId = a.DepartmentId,
-                                TicketAssigneeType = a.TicketAssigneeType
-                            }).ToList();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Failed to parse assignees JSON");
-                        return BadRequest(new { message = "Invalid assignees format. Expected JSON array." });
-                    }
-                }
 
                 // Process uploaded files
                 if (formData.Files != null && formData.Files.Any())

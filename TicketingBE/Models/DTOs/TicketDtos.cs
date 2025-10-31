@@ -10,8 +10,7 @@ namespace TicketingBE.Models.DTOs
         public string Description { get; set; } = string.Empty;
         public DateTime? AlertBuffer { get; set; }
         public DateTime? Deadline { get; set; }
-        public string TicketStatus { get; set; } = string.Empty;
-        public List<CreateTicketAssigneeDto> Assignees { get; set; } = new();
+        public string? AssigneeDepartmentId { get; set; }
         public List<CreateTicketFileDto> Files { get; set; } = new();
     }
 

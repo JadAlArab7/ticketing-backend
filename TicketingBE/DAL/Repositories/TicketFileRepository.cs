@@ -116,7 +116,7 @@ namespace TicketingBE.DAL.Repositories
                     _sqlHelper.CreateParam("@file_data", fileData),
                     _sqlHelper.CreateParam("@ticket_id", Guid.Parse(ticketId)),
                     _sqlHelper.CreateParam("@created_by", Guid.Parse(createdBy)),
-                    _sqlHelper.CreateParam("@created_at", DateTime.UtcNow)
+                    _sqlHelper.CreateParam("@created_at", DateTime.Now)
                 };
 
                 await _sqlHelper.ExecuteNonQueryAsync(query, parameters);

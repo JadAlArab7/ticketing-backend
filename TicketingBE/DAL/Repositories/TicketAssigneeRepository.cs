@@ -31,7 +31,7 @@ namespace TicketingBE.DAL.Repositories
                         tat.name AS ticket_assignee_type_name
                     FROM tck.ticket_assignees ta
                     INNER JOIN tck.departments d ON ta.department_id = d.id
-                    LEFT JOIN tck.ticket_assignee_types tat ON ta.ticket_assignee_type = tat.id
+                    LEFT JOIN tck.ticket_assignee_type tat ON ta.ticket_assignee_type = tat.id
                     WHERE ta.ticket_id = @ticket_id";
 
                 var parameters = new[] { _sqlHelper.CreateParam("@ticket_id", Guid.Parse(ticketId)) };

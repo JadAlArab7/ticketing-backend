@@ -10,12 +10,7 @@ namespace TicketingBE.Models.DTOs
         public string Description { get; set; } = string.Empty;
         public DateTime? AlertBuffer { get; set; }
         public DateTime? Deadline { get; set; }
-        public string TicketStatus { get; set; } = string.Empty;
-        
-        // Assignees as JSON string array or comma-separated values
-        public string? Assignees { get; set; }
-        
-        // File uploads
+        public string? AssigneeDepartmentId { get; set; }
         public List<IFormFile>? Files { get; set; }
     }
 

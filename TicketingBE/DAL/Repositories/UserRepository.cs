@@ -250,17 +250,12 @@ namespace TicketingBE.DAL.Repositories
         {
             string query = @"
                 SELECT 
-                    u.id, 
-                    u.username, 
-                    u.password,
-                    u.department_id,
-                    d.name as department_name,
-                    dt.name as department_type
-                FROM tck.users u
-                INNER JOIN tck.departments d ON u.department_id = d.id
-                INNER JOIN tck.department_types dt ON d.department_type_id = dt.id
-                WHERE d.parent_department_id = @parentDepartmentId
-                ORDER BY u.username";
+                    d.id as id, 
+                    d.name as name 
+                FROM tck.departments d 
+                INNER JOIN tck.department_types dt ON d.department_type_id = dt.id 
+                WHERE d.parent_department_id = @parentDepartmentId 
+                ORDER BY name";
 
             return await Task.Run(() =>
             {
@@ -272,11 +267,7 @@ namespace TicketingBE.DAL.Repositories
                         users.Add(new User
                         {
                             Id = TypeHelper.GetGuidAsString(dataReader["id"]),
-                            Username = TypeHelper.GetString(dataReader["username"]),
-                            Password = TypeHelper.GetString(dataReader["password"]),
-                            DepartmentId = TypeHelper.GetGuidAsString(dataReader["department_id"]),
-                            DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
-                            DepartmentType = TypeHelper.GetString(dataReader["department_type"])
+                            Username = TypeHelper.GetString(dataReader["name"])
                         });
                     }
                     return users;
@@ -292,17 +283,12 @@ namespace TicketingBE.DAL.Repositories
         {
             string query = @"
                 SELECT 
-                    u.id, 
-                    u.username, 
-                    u.password,
-                    u.department_id,
-                    d.name as department_name,
-                    dt.name as department_type
-                FROM tck.users u
-                INNER JOIN tck.departments d ON u.department_id = d.id
+                    d.id as id,
+                    d.name as name
+                FROM tck.departments d
                 INNER JOIN tck.department_types dt ON d.department_type_id = dt.id
                 WHERE d.id = @departmentId OR d.parent_department_id = @departmentId
-                ORDER BY u.username";
+                ORDER BY name";
 
             return await Task.Run(() =>
             {
@@ -314,11 +300,7 @@ namespace TicketingBE.DAL.Repositories
                         users.Add(new User
                         {
                             Id = TypeHelper.GetGuidAsString(dataReader["id"]),
-                            Username = TypeHelper.GetString(dataReader["username"]),
-                            Password = TypeHelper.GetString(dataReader["password"]),
-                            DepartmentId = TypeHelper.GetGuidAsString(dataReader["department_id"]),
-                            DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
-                            DepartmentType = TypeHelper.GetString(dataReader["department_type"])
+                            Username = TypeHelper.GetString(dataReader["name"]),
                         });
                     }
                     return users;

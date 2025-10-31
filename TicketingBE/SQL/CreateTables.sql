@@ -34,8 +34,8 @@ CREATE TABLE tck.tickets(
 	ticket_type_id UUID NOT NULL REFERENCES tck.ticket_types(id),
 	subject TEXT check (subject <> ''),
 	description TEXT check (description <> ''),
-	alert_buffer TIMESTAMP,
-	deadline TIMESTAMP,
+	alert_buffer TIMESTAMP WITH TIME ZONE,
+	deadline TIMESTAMP WITH TIME ZONE,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	ticket_status UUID REFERENCES tck.ticket_status(id),
 	created_by UUID NOT NULL REFERENCES tck.departments(id)

@@ -174,6 +174,9 @@ namespace TicketingBE.DAL.Repositories
                 // Generate new ticket ID
                 string ticketId = Guid.NewGuid().ToString();
 
+                // Default status: Draft (9921a92c-c0f7-4c14-95c5-3774e5c3d81b)
+                string defaultDraftStatusId = "9921a92c-c0f7-4c14-95c5-3774e5c3d81b";
+
                 // Insert ticket
                 string insertQuery = @"
                     INSERT INTO tck.tickets 
@@ -187,19 +190,20 @@ namespace TicketingBE.DAL.Repositories
                     _sqlHelper.CreateParam("@ticket_type_id", Guid.Parse(ticket.TicketTypeId)),
                     _sqlHelper.CreateParam("@subject", ticket.Subject),
                     _sqlHelper.CreateParam("@description", ticket.Description),
-                    _sqlHelper.CreateParam("@alert_buffer", ticket.AlertBuffer.HasValue ? ticket.AlertBuffer.Value : DBNull.Value),
-                    _sqlHelper.CreateParam("@deadline", ticket.Deadline.HasValue ? ticket.Deadline.Value : DBNull.Value),
-                    _sqlHelper.CreateParam("@ticket_status", Guid.Parse(ticket.TicketStatus)),
+                    _sqlHelper.CreateParam("@alert_buffer", ticket.AlertBuffer.HasValue ? DateTime.SpecifyKind(ticket.AlertBuffer.Value, DateTimeKind.Unspecified) : DBNull.Value),
+                    _sqlHelper.CreateParam("@deadline", ticket.Deadline.HasValue ? DateTime.SpecifyKind(ticket.Deadline.Value, DateTimeKind.Unspecified) : DBNull.Value),
+                    _sqlHelper.CreateParam("@ticket_status", Guid.Parse(defaultDraftStatusId)),
                     _sqlHelper.CreateParam("@created_by", Guid.Parse(createdBy)),
-                    _sqlHelper.CreateParam("@created_at", DateTime.UtcNow)
+                    _sqlHelper.CreateParam("@created_at", DateTime.Now)
                 };
 
                 await _sqlHelper.ExecuteNonQueryAsync(insertQuery, parameters, transaction);
 
-                // Insert assignees
-                foreach (var assignee in ticket.Assignees)
+                // Insert assignee if provided
+                if (!string.IsNullOrWhiteSpace(ticket.AssigneeDepartmentId))
                 {
-                    await InsertAssigneeAsync(ticketId, assignee.DepartmentId, assignee.TicketAssigneeType, transaction);
+                    string defaultAssigneeTypeId = "e58efe89-2c1d-4102-b328-25ecdfb600dd";
+                    await InsertAssigneeAsync(ticketId, ticket.AssigneeDepartmentId, defaultAssigneeTypeId, transaction);
                 }
 
                 // Insert files
@@ -258,8 +262,8 @@ namespace TicketingBE.DAL.Repositories
                     _sqlHelper.CreateParam("@ticket_type_id", Guid.Parse(ticket.TicketTypeId)),
                     _sqlHelper.CreateParam("@subject", ticket.Subject),
                     _sqlHelper.CreateParam("@description", ticket.Description),
-                    _sqlHelper.CreateParam("@alert_buffer", ticket.AlertBuffer.HasValue ? ticket.AlertBuffer.Value : DBNull.Value),
-                    _sqlHelper.CreateParam("@deadline", ticket.Deadline.HasValue ? ticket.Deadline.Value : DBNull.Value),
+                    _sqlHelper.CreateParam("@alert_buffer", ticket.AlertBuffer.HasValue ? DateTime.SpecifyKind(ticket.AlertBuffer.Value, DateTimeKind.Unspecified) : DBNull.Value),
+                    _sqlHelper.CreateParam("@deadline", ticket.Deadline.HasValue ? DateTime.SpecifyKind(ticket.Deadline.Value, DateTimeKind.Unspecified) : DBNull.Value),
                     _sqlHelper.CreateParam("@ticket_status", Guid.Parse(ticket.TicketStatus))
                 };
 
@@ -406,7 +410,7 @@ namespace TicketingBE.DAL.Repositories
                 _sqlHelper.CreateParam("@file_data", fileData),
                 _sqlHelper.CreateParam("@ticket_id", Guid.Parse(ticketId)),
                 _sqlHelper.CreateParam("@created_by", Guid.Parse(createdBy)),
-                _sqlHelper.CreateParam("@created_at", DateTime.UtcNow)
+                _sqlHelper.CreateParam("@created_at", DateTime.Now)
             };
 
             await _sqlHelper.ExecuteNonQueryAsync(query, parameters, transaction);

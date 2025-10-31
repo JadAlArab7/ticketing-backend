@@ -27,15 +27,15 @@ namespace TicketingBE.BLL.Services
         {
             try
             {
-                // Get userId from JWT claims (userId is the department ID)
-                var userId = _httpContextAccessor.HttpContext?.User.FindFirst("userId")?.Value;
+                // Get department ID from JWT claims
+                var departmentId = _httpContextAccessor.HttpContext?.User.FindFirst("departmentId")?.Value;
                 
-                if (string.IsNullOrWhiteSpace(userId))
+                if (string.IsNullOrWhiteSpace(departmentId))
                 {
-                    throw new UnauthorizedAccessException("User ID not found in token");
+                    throw new UnauthorizedAccessException("Department ID not found in token");
                 }
 
-                return await _ticketRepository.GetAllTicketsAsync(userId, sortBy, order);
+                return await _ticketRepository.GetAllTicketsAsync(departmentId, sortBy, order);
             }
             catch (Exception ex)
             {
@@ -61,15 +61,15 @@ namespace TicketingBE.BLL.Services
         {
             try
             {
-                // Get createdBy from JWT claims (userId is the department ID)
-                var createdBy = _httpContextAccessor.HttpContext?.User.FindFirst("userId")?.Value;
+                // Get department ID from JWT claims
+                var departmentId = _httpContextAccessor.HttpContext?.User.FindFirst("departmentId")?.Value;
                 
-                if (string.IsNullOrWhiteSpace(createdBy))
+                if (string.IsNullOrWhiteSpace(departmentId))
                 {
-                    throw new UnauthorizedAccessException("User ID not found in token");
+                    throw new UnauthorizedAccessException("Department ID not found in token");
                 }
 
-                return await _ticketRepository.CreateTicketAsync(ticket, createdBy);
+                return await _ticketRepository.CreateTicketAsync(ticket, departmentId);
             }
             catch (Exception ex)
             {

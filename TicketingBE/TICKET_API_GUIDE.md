@@ -153,9 +153,10 @@ Content-Type: multipart/form-data
 | `description` | string | Yes | Detailed description |
 | `alertBuffer` | datetime | No | Alert buffer timestamp |
 | `deadline` | datetime | No | Deadline timestamp |
-| `ticketStatus` | string | Yes | GUID of the ticket status |
 | `assignees` | string (JSON) | No | JSON array of assignee objects |
 | `files` | file[] | No | Array of file uploads |
+
+**Note:** Ticket status is automatically set to "Draft" (9921a92c-c0f7-4c14-95c5-3774e5c3d81b) by default.
 
 **Assignees Format (JSON string):**
 ```json
@@ -175,7 +176,6 @@ formData.append('subject', 'Ticket subject');
 formData.append('description', 'Detailed description');
 formData.append('alertBuffer', '2024-01-14T10:00:00Z');
 formData.append('deadline', '2024-01-15T10:00:00Z');
-formData.append('ticketStatus', 'status-guid');
 
 // Assignees as JSON string
 const assignees = JSON.stringify([
@@ -203,7 +203,6 @@ curl -X POST "https://api.example.com/api/Ticket" \
   -F "ticketTypeId=guid-here" \
   -F "subject=Ticket subject" \
   -F "description=Detailed description" \
-  -F "ticketStatus=status-guid" \
   -F "assignees=[{\"departmentId\":\"dept-guid\",\"ticketAssigneeType\":\"type-guid\"}]" \
   -F "files=@/path/to/file1.pdf" \
   -F "files=@/path/to/file2.jpg"
@@ -212,6 +211,7 @@ curl -X POST "https://api.example.com/api/Ticket" \
 **Notes:**
 - Content-Type must be `multipart/form-data`
 - `createdBy` is automatically extracted from JWT token (userId claim = departmentId)
+- `ticketStatus` is automatically set to "Draft" (9921a92c-c0f7-4c14-95c5-3774e5c3d81b) - **no need to send**
 - Files are uploaded directly as multipart files (no base64 encoding needed)
 - `assignees` field should be a JSON-stringified array
 - All operations (ticket, assignees, files) are executed in a database transaction
