@@ -72,16 +72,73 @@ namespace TicketingBE.Controllers
         /// <summary>
         /// Create a new ticket
         /// </summary>
-        /// <param name="ticket">Ticket data</param>
+        /// <param name="formData">Ticket data from form (supports file uploads)</param>
         /// <returns>Created ticket ID</returns>
         [HttpPost]
-        public async Task<IActionResult> CreateTicket([FromBody] CreateTicketDto ticket)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateTicket([FromForm] CreateTicketFormDto formData)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
+                }
+
+                // Convert form data to CreateTicketDto
+                var ticket = new CreateTicketDto
+                {
+                    TicketTypeId = formData.TicketTypeId,
+                    Subject = formData.Subject,
+                    Description = formData.Description,
+                    AlertBuffer = formData.AlertBuffer,
+                    Deadline = formData.Deadline,
+                    TicketStatus = formData.TicketStatus,
+                    Assignees = new List<CreateTicketAssigneeDto>(),
+                    Files = new List<CreateTicketFileDto>()
+                };
+
+                // Parse assignees from JSON string
+                if (!string.IsNullOrWhiteSpace(formData.Assignees))
+                {
+                    try
+                    {
+                        var assignees = System.Text.Json.JsonSerializer.Deserialize<List<AssigneeFormData>>(formData.Assignees);
+                        if (assignees != null)
+                        {
+                            ticket.Assignees = assignees.Select(a => new CreateTicketAssigneeDto
+                            {
+                                DepartmentId = a.DepartmentId,
+                                TicketAssigneeType = a.TicketAssigneeType
+                            }).ToList();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to parse assignees JSON");
+                        return BadRequest(new { message = "Invalid assignees format. Expected JSON array." });
+                    }
+                }
+
+                // Process uploaded files
+                if (formData.Files != null && formData.Files.Any())
+                {
+                    foreach (var file in formData.Files)
+                    {
+                        if (file.Length > 0)
+                        {
+                            using (var memoryStream = new MemoryStream())
+                            {
+                                await file.CopyToAsync(memoryStream);
+                                ticket.Files.Add(new CreateTicketFileDto
+                                {
+                                    FileName = file.FileName,
+                                    ContentType = file.ContentType,
+                                    FileData = memoryStream.ToArray()
+                                });
+                            }
+                        }
+                    }
                 }
 
                 var ticketId = await _ticketService.CreateTicketAsync(ticket);

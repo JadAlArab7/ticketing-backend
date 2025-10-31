@@ -28,15 +28,16 @@ namespace TicketingBE.DAL.Repositories
             _logger = logger;
         }
 
-        public async Task<IEnumerable<TicketListItemDto>> GetAllTicketsAsync(string? sortBy = null, string? order = null)
+        public async Task<IEnumerable<TicketListItemDto>> GetAllTicketsAsync(string userId, string? sortBy = null, string? order = null)
         {
             try
             {
                 // Build ORDER BY clause dynamically
                 string orderByClause = BuildOrderByClause(sortBy, order);
 
+                // Filter tickets: created by user OR assigned to user's department
                 string query = $@"
-                    SELECT 
+                    SELECT DISTINCT
                         t.id,
                         t.subject,
                         tt.name AS ticket_type_name,
@@ -48,7 +49,11 @@ namespace TicketingBE.DAL.Repositories
                     INNER JOIN tck.ticket_types tt ON t.ticket_type_id = tt.id
                     LEFT JOIN tck.ticket_status ts ON t.ticket_status = ts.id
                     INNER JOIN tck.departments d ON t.created_by = d.id
+                    LEFT JOIN tck.ticket_assignees ta ON t.id = ta.ticket_id
+                    WHERE t.created_by = @user_id OR ta.department_id = @user_id
                     {orderByClause}";
+
+                var parameters = new[] { _sqlHelper.CreateParam("@user_id", Guid.Parse(userId)) };
 
                 var tickets = await _sqlHelper.ExecuteReaderAsync(query, reader => new TicketListItemDto
                 {
@@ -59,7 +64,7 @@ namespace TicketingBE.DAL.Repositories
                     CreatedByDepartmentName = TypeHelper.GetString(reader, "created_by_department_name"),
                     Deadline = TypeHelper.GetNullableDateTime(reader, "deadline"),
                     CreatedAt = TypeHelper.GetDateTime(reader, "created_at")
-                });
+                }, parameters);
 
                 // Load assignees for each ticket
                 foreach (var ticket in tickets)
@@ -72,7 +77,7 @@ namespace TicketingBE.DAL.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving all tickets");
+                _logger.LogError(ex, "Error occurred while retrieving all tickets for user {UserId}", userId);
                 throw;
             }
         }

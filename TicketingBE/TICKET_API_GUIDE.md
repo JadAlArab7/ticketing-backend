@@ -53,10 +53,16 @@ CREATE TABLE tck.ticket_files(
 
 All endpoints require JWT authentication via `[Authorize]` attribute.
 
-### 1. Get All Tickets (with sorting)
+### 1. Get All Tickets (with sorting and filtering)
 ```http
 GET /api/Ticket?sortBy={column}&order={direction}
 ```
+
+**Authentication:** Required (JWT Bearer token)
+
+**Filtering:** Automatically filters to show only tickets where the authenticated user is:
+- The creator (`created_by` = user's department ID from JWT)
+- OR an assignee (user's department ID in `ticket_assignees`)
 
 **Query Parameters:**
 - `sortBy` (optional): Column to sort by
@@ -135,35 +141,79 @@ GET /api/Ticket/{id}
 ### 3. Create Ticket
 ```http
 POST /api/Ticket
+Content-Type: multipart/form-data
 ```
 
-**Request Body:**
+**Request Body (Form Data):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ticketTypeId` | string | Yes | GUID of the ticket type |
+| `subject` | string | Yes | Ticket subject/title |
+| `description` | string | Yes | Detailed description |
+| `alertBuffer` | datetime | No | Alert buffer timestamp |
+| `deadline` | datetime | No | Deadline timestamp |
+| `ticketStatus` | string | Yes | GUID of the ticket status |
+| `assignees` | string (JSON) | No | JSON array of assignee objects |
+| `files` | file[] | No | Array of file uploads |
+
+**Assignees Format (JSON string):**
 ```json
-{
-  "ticketTypeId": "guid-string",
-  "subject": "Ticket subject",
-  "description": "Detailed description",
-  "alertBuffer": "2024-01-14T10:00:00Z",
-  "deadline": "2024-01-15T10:00:00Z",
-  "ticketStatus": "guid-string",
-  "assignees": [
-    {
-      "departmentId": "guid-string",
-      "ticketAssigneeType": "guid-string"
-    }
-  ],
-  "files": [
-    {
-      "fileName": "document.pdf",
-      "contentType": "application/pdf",
-      "fileData": "base64-encoded-bytes"
-    }
-  ]
-}
+[
+  {
+    "departmentId": "guid-string",
+    "ticketAssigneeType": "guid-string"
+  }
+]
+```
+
+**Example using JavaScript FormData:**
+```javascript
+const formData = new FormData();
+formData.append('ticketTypeId', 'guid-here');
+formData.append('subject', 'Ticket subject');
+formData.append('description', 'Detailed description');
+formData.append('alertBuffer', '2024-01-14T10:00:00Z');
+formData.append('deadline', '2024-01-15T10:00:00Z');
+formData.append('ticketStatus', 'status-guid');
+
+// Assignees as JSON string
+const assignees = JSON.stringify([
+  { departmentId: 'dept-guid', ticketAssigneeType: 'type-guid' }
+]);
+formData.append('assignees', assignees);
+
+// Multiple file uploads
+formData.append('files', fileInput.files[0]);
+formData.append('files', fileInput.files[1]);
+
+fetch('/api/Ticket', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer ' + token
+  },
+  body: formData
+});
+```
+
+**Example using cURL:**
+```bash
+curl -X POST "https://api.example.com/api/Ticket" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -F "ticketTypeId=guid-here" \
+  -F "subject=Ticket subject" \
+  -F "description=Detailed description" \
+  -F "ticketStatus=status-guid" \
+  -F "assignees=[{\"departmentId\":\"dept-guid\",\"ticketAssigneeType\":\"type-guid\"}]" \
+  -F "files=@/path/to/file1.pdf" \
+  -F "files=@/path/to/file2.jpg"
 ```
 
 **Notes:**
+- Content-Type must be `multipart/form-data`
 - `createdBy` is automatically extracted from JWT token (userId claim = departmentId)
+- Files are uploaded directly as multipart files (no base64 encoding needed)
+- `assignees` field should be a JSON-stringified array
 - All operations (ticket, assignees, files) are executed in a database transaction
 - Returns `201 Created` with location header pointing to the new ticket
 
@@ -171,6 +221,13 @@ POST /api/Ticket
 ```json
 {
   "id": "new-guid-string"
+}
+```
+
+**Error Response (Invalid Assignees Format):** `400 Bad Request`
+```json
+{
+  "message": "Invalid assignees format. Expected JSON array."
 }
 ```
 
@@ -252,8 +309,13 @@ When listing tickets or retrieving ticket details, file metadata is returned wit
 
 All endpoints require JWT authentication:
 - Header: `Authorization: Bearer {token}`
-- The `createdBy` field is automatically populated from the JWT token's `userId` claim
+- The `createdBy` field is automatically populated from the JWT token's `userId` claim (department ID)
 - Users can only create tickets for their own department (enforced by token validation)
+
+**Data Visibility:**
+- Users can only see tickets they created OR tickets assigned to their department
+- The GET /api/Ticket endpoint automatically filters results based on the authenticated user's department ID
+- Query: `WHERE created_by = @user_id OR ticket_assignees.department_id = @user_id`
 
 ## Error Handling
 

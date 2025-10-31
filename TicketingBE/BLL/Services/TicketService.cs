@@ -27,7 +27,15 @@ namespace TicketingBE.BLL.Services
         {
             try
             {
-                return await _ticketRepository.GetAllTicketsAsync(sortBy, order);
+                // Get userId from JWT claims (userId is the department ID)
+                var userId = _httpContextAccessor.HttpContext?.User.FindFirst("userId")?.Value;
+                
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    throw new UnauthorizedAccessException("User ID not found in token");
+                }
+
+                return await _ticketRepository.GetAllTicketsAsync(userId, sortBy, order);
             }
             catch (Exception ex)
             {

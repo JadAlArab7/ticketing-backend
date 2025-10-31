@@ -8,7 +8,7 @@ namespace TicketingBE.DAL.Interfaces
     /// </summary>
     public interface ITicketRepository
     {
-        Task<IEnumerable<TicketListItemDto>> GetAllTicketsAsync(string? sortBy = null, string? order = null);
+        Task<IEnumerable<TicketListItemDto>> GetAllTicketsAsync(string userId, string? sortBy = null, string? order = null);
         Task<TicketDetailDto?> GetTicketByIdAsync(string id);
         Task<string> CreateTicketAsync(CreateTicketDto ticket, string createdBy);
         Task<bool> UpdateTicketAsync(UpdateTicketDto ticket);
