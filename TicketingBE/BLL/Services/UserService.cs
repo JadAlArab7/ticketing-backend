@@ -46,11 +46,11 @@ namespace TicketingBE.BLL.Services
         /// <summary>
         /// Retrieves a specific user by their ID
         /// </summary>
-        public async Task<User?> GetUserByIdAsync(int id)
+        public async Task<User?> GetUserByIdAsync(string id)
         {
             try
             {
-                if (id <= 0)
+                if (string.IsNullOrWhiteSpace(id) || !Guid.TryParse(id, out _))
                 {
                     _logger.LogWarning("Invalid user ID: {UserId}", id);
                     return null;
@@ -91,7 +91,7 @@ namespace TicketingBE.BLL.Services
         /// Creates a new user with validation
         /// Business Rules: Validate required fields, username uniqueness, department assignment
         /// </summary>
-        public async Task<int> CreateUserAsync(User user)
+        public async Task<string> CreateUserAsync(User user)
         {
             try
             {
@@ -102,8 +102,8 @@ namespace TicketingBE.BLL.Services
                 if (string.IsNullOrWhiteSpace(user.Password))
                     throw new ArgumentException("Password is required");
 
-                if (user.DepartmentId == Guid.Empty)
-                    throw new ArgumentException("Department is required");
+                if (string.IsNullOrWhiteSpace(user.DepartmentId) || !Guid.TryParse(user.DepartmentId, out _))
+                    throw new ArgumentException("Valid Department is required");
 
                 // Business rule: Check if username already exists
                 var existingUser = await _userRepository.GetUserByEmailAsync(user.Username);
@@ -131,7 +131,7 @@ namespace TicketingBE.BLL.Services
             try
             {
                 // Business rule: Validate required fields
-                if (user.Id == Guid.Empty)
+                if (string.IsNullOrWhiteSpace(user.Id) || !Guid.TryParse(user.Id, out _))
                     throw new ArgumentException("Invalid user ID");
 
                 if (string.IsNullOrWhiteSpace(user.Username))
@@ -140,8 +140,8 @@ namespace TicketingBE.BLL.Services
                 if (string.IsNullOrWhiteSpace(user.Password))
                     throw new ArgumentException("Password is required");
 
-                if (user.DepartmentId == Guid.Empty)
-                    throw new ArgumentException("Department is required");
+                if (string.IsNullOrWhiteSpace(user.DepartmentId) || !Guid.TryParse(user.DepartmentId, out _))
+                    throw new ArgumentException("Valid Department is required");
 
                 // Business rule: Check if username is already taken by another user
                 var userWithUsername = await _userRepository.GetUserByEmailAsync(user.Username);
@@ -163,11 +163,11 @@ namespace TicketingBE.BLL.Services
         /// <summary>
         /// Deactivates a user (deprecated - included for interface compatibility)
         /// </summary>
-        public async Task<bool> DeactivateUserAsync(int id)
+        public async Task<bool> DeactivateUserAsync(string id)
         {
             try
             {
-                if (id <= 0)
+                if (string.IsNullOrWhiteSpace(id) || !Guid.TryParse(id, out _))
                     throw new ArgumentException("Invalid user ID");
 
                 // Note: Current schema doesn't support soft delete
@@ -185,11 +185,11 @@ namespace TicketingBE.BLL.Services
         /// Permanently deletes a user from the database
         /// Business Rule: This is a hard delete - use with caution
         /// </summary>
-        public async Task<bool> DeleteUserAsync(int id)
+        public async Task<bool> DeleteUserAsync(string id)
         {
             try
             {
-                if (id <= 0)
+                if (string.IsNullOrWhiteSpace(id) || !Guid.TryParse(id, out _))
                     throw new ArgumentException("Invalid user ID");
 
                 var result = await _userRepository.DeleteUserAsync(id);

@@ -23,6 +23,7 @@ namespace TicketingBE.Extensions
             
             // Register all repository interfaces and their implementations
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IDepartmentRepository, DepartmentRepository>();
             
             // Add more repositories here as your application grows
             // services.AddScoped<ITicketRepository, TicketRepository>();
@@ -40,6 +41,7 @@ namespace TicketingBE.Extensions
         {
             // Register all service interfaces and their implementations
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IDepartmentService, DepartmentService>();
             
             // Add more services here as your application grows
             // services.AddScoped<ITicketService, TicketService>();

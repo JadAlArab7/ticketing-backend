@@ -19,7 +19,7 @@ namespace TicketingBE.DAL.Interfaces
         /// </summary>
         /// <param name="id">The unique identifier of the user</param>
         /// <returns>The user if found, null otherwise</returns>
-        Task<User?> GetUserByIdAsync(int id);
+        Task<User?> GetUserByIdAsync(string id);
 
         /// <summary>
         /// Retrieves a user by their email address
@@ -33,7 +33,7 @@ namespace TicketingBE.DAL.Interfaces
         /// </summary>
         /// <param name="user">The user object to create</param>
         /// <returns>The ID of the newly created user</returns>
-        Task<int> CreateUserAsync(User user);
+        Task<string> CreateUserAsync(User user);
 
         /// <summary>
         /// Updates an existing user in the database
@@ -47,7 +47,7 @@ namespace TicketingBE.DAL.Interfaces
         /// </summary>
         /// <param name="id">The unique identifier of the user to delete</param>
         /// <returns>True if the deletion was successful, false otherwise</returns>
-        Task<bool> DeleteUserAsync(int id);
+        Task<bool> DeleteUserAsync(string id);
 
         /// <summary>
         /// Authenticates a user by username and password

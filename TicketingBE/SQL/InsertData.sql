@@ -39,3 +39,15 @@ INSERT INTO tck.ticket_status_transitions (id, from_status, to_status, ticket_ty
 VALUES ('4ceb50c9-3d7c-45ed-82c2-becf3aed5e8a', 'd294ae42-fd7d-4a2d-9ff9-829d788e60d0', '45ab3f52-1ff6-491a-8c5a-2af874820f45', 'ed8415e2-7027-402b-93d3-4b1d6dc970eb'); 
 INSERT INTO tck.ticket_status_transitions (id, from_status, to_status, ticket_type_id) --from need revision to in review
 VALUES ('77fca23a-08e8-4b0e-a857-6c0a439169aa', '45ab3f52-1ff6-491a-8c5a-2af874820f45', 'd294ae42-fd7d-4a2d-9ff9-829d788e60d0', 'ed8415e2-7027-402b-93d3-4b1d6dc970eb');
+
+
+INSERT INTO tck.departments (id, name, department_type_id, parent_department_id)
+VALUES ('4dd7e345-9015-402c-8000-31225fb06c63', 'CEO', '7a0a3983-d166-4a54-9475-0349a5561867', NULL);
+INSERT INTO tck.departments (id, name, department_type_id, parent_department_id)
+VALUES ('a40771f6-5182-4250-a483-bb842e9f9fd4', 'Head of HR department', 'afbef9ab-d33a-4099-8eaa-01cd3f31c9dd', '4dd7e345-9015-402c-8000-31225fb06c63');
+INSERT INTO tck.departments (id, name, department_type_id, parent_department_id)
+VALUES ('4f1ecb16-9af5-472e-ba31-e541aa4966fc', 'Head of Technical department', 'afbef9ab-d33a-4099-8eaa-01cd3f31c9dd', '4dd7e345-9015-402c-8000-31225fb06c63');
+INSERT INTO tck.departments (id, name, department_type_id, parent_department_id)
+VALUES ('71db78a3-337f-4522-b464-fba7b791a866', 'HR', 'a28e49ff-a949-4a00-b9ae-f3a1d85f7027', 'a40771f6-5182-4250-a483-bb842e9f9fd4');
+INSERT INTO tck.departments (id, name, department_type_id, parent_department_id)
+VALUES ('d6ae2178-8eb0-4d30-9dd1-b3d5e871051f', 'Techincal', 'a28e49ff-a949-4a00-b9ae-f3a1d85f7027', '4f1ecb16-9af5-472e-ba31-e541aa4966fc');

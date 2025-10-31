@@ -46,7 +46,7 @@ namespace TicketingBE.Controllers
         /// Retrieves a specific user by ID
         /// </summary>
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUserById(int id)
+        public async Task<ActionResult<User>> GetUserById(string id)
         {
             try
             {
@@ -123,7 +123,7 @@ namespace TicketingBE.Controllers
         /// Updates an existing user
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateUser(Guid id, [FromBody] User user)
+        public async Task<ActionResult> UpdateUser(string id, [FromBody] User user)
         {
             try
             {
@@ -159,7 +159,7 @@ namespace TicketingBE.Controllers
         /// Soft deletes a user (marks as inactive)
         /// </summary>
         [HttpDelete("{id}/deactivate")]
-        public async Task<ActionResult> DeactivateUser(int id)
+        public async Task<ActionResult> DeactivateUser(string id)
         {
             try
             {
@@ -192,7 +192,7 @@ namespace TicketingBE.Controllers
         /// Permanently deletes a user from the database
         /// </summary>
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteUser(int id)
+        public async Task<ActionResult> DeleteUser(string id)
         {
             try
             {

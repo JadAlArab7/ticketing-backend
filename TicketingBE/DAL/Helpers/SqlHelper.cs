@@ -40,7 +40,7 @@ namespace TicketingBE.DAL.Helpers
         {
             try
             {
-                return ExecuteData(null!, null!, query, false, parameters);
+                return ExecuteData(null!, null!, query, true, parameters);
             }
             catch (Exception ex)
             {
@@ -145,7 +145,6 @@ namespace TicketingBE.DAL.Helpers
             T? ret = default(T);
             NpgsqlConnection? conn = null;
             NpgsqlTransaction? txn = null;
-            NpgsqlDataReader? dataReader = null;
 
             try
             {
@@ -167,11 +166,12 @@ namespace TicketingBE.DAL.Helpers
                         }
                     }
 
-                    dataReader = cmd.ExecuteReader();
-
-                    if (dataReaderFn != null)
+                    using (NpgsqlDataReader dataReader = cmd.ExecuteReader())
                     {
-                        ret = dataReaderFn(dataReader);
+                        if (dataReaderFn != null)
+                        {
+                            ret = dataReaderFn(dataReader);
+                        }
                     }
                 }
 
@@ -199,18 +199,6 @@ namespace TicketingBE.DAL.Helpers
             }
             finally
             {
-                try
-                {
-                    if (dataReader != null && !dataReader.IsClosed)
-                    {
-                        dataReader.Close();
-                    }
-                }
-                catch (Exception)
-                {
-                    // Log but don't throw exceptions in finally block
-                }
-
                 if (commit && conn != null)
                 {
                     CloseConnection(conn);

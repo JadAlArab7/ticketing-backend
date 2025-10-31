@@ -132,5 +132,33 @@ namespace TicketingBE.DAL.Helpers
             
             return (byte[])value;
         }
+
+        /// <summary>
+        /// Converts a GUID value from the database to a string
+        /// </summary>
+        public static string GetGuidAsString(object value)
+        {
+            if (value == null || value == DBNull.Value)
+                return string.Empty;
+            
+            if (value is Guid guid)
+                return guid.ToString();
+            
+            return value.ToString() ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Converts a nullable GUID value from the database to a nullable string
+        /// </summary>
+        public static string? GetNullableGuidAsString(object value)
+        {
+            if (value == null || value == DBNull.Value)
+                return null;
+            
+            if (value is Guid guid)
+                return guid.ToString();
+            
+            return value.ToString();
+        }
     }
 }

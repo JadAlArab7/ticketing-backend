@@ -5,10 +5,10 @@ namespace TicketingBE.Models
     /// </summary>
     public class User
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
-        public Guid DepartmentId { get; set; }
+        public string DepartmentId { get; set; } = string.Empty;
         public string DepartmentName { get; set; } = string.Empty;
         public string DepartmentType { get; set; } = string.Empty;
     }

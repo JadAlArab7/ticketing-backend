@@ -44,10 +44,10 @@ namespace TicketingBE.DAL.Repositories
                     {
                         users.Add(new User
                         {
-                            Id = TypeHelper.GetGuid(dataReader["id"]),
+                            Id = TypeHelper.GetGuidAsString(dataReader["id"]),
                             Username = TypeHelper.GetString(dataReader["username"]),
                             Password = TypeHelper.GetString(dataReader["password"]),
-                            DepartmentId = TypeHelper.GetGuid(dataReader["department_id"]),
+                            DepartmentId = TypeHelper.GetGuidAsString(dataReader["department_id"]),
                             DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
                             DepartmentType = TypeHelper.GetString(dataReader["department_type"])
                         });
@@ -60,7 +60,7 @@ namespace TicketingBE.DAL.Repositories
         /// <summary>
         /// Retrieves a specific user by their ID with department information
         /// </summary>
-        public async Task<User?> GetUserByIdAsync(int id)
+        public async Task<User?> GetUserByIdAsync(string id)
         {
             string query = @"
                 SELECT 
@@ -84,16 +84,16 @@ namespace TicketingBE.DAL.Repositories
                     {
                         user = new User
                         {
-                            Id = TypeHelper.GetGuid(dataReader["id"]),
+                            Id = TypeHelper.GetGuidAsString(dataReader["id"]),
                             Username = TypeHelper.GetString(dataReader["username"]),
                             Password = TypeHelper.GetString(dataReader["password"]),
-                            DepartmentId = TypeHelper.GetGuid(dataReader["department_id"]),
+                            DepartmentId = TypeHelper.GetGuidAsString(dataReader["department_id"]),
                             DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
                             DepartmentType = TypeHelper.GetString(dataReader["department_type"])
                         };
                     }
                     return user;
-                }, _sqlHelper.CreateParam("@id", id));
+                }, _sqlHelper.CreateParam("@id", Guid.Parse(id)));
             });
         }
 
@@ -124,10 +124,10 @@ namespace TicketingBE.DAL.Repositories
                     {
                         user = new User
                         {
-                            Id = TypeHelper.GetGuid(dataReader["id"]),
+                            Id = TypeHelper.GetGuidAsString(dataReader["id"]),
                             Username = TypeHelper.GetString(dataReader["username"]),
                             Password = TypeHelper.GetString(dataReader["password"]),
-                            DepartmentId = TypeHelper.GetGuid(dataReader["department_id"]),
+                            DepartmentId = TypeHelper.GetGuidAsString(dataReader["department_id"]),
                             DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
                             DepartmentType = TypeHelper.GetString(dataReader["department_type"])
                         };
@@ -140,28 +140,25 @@ namespace TicketingBE.DAL.Repositories
         /// <summary>
         /// Creates a new user in the database
         /// </summary>
-        public async Task<int> CreateUserAsync(User user)
-        {
-            string query = @"INSERT INTO tck.users (username, password, department_id) 
-                            VALUES (@username, @password, @department_id)
-                            RETURNING id";
-
-            return await Task.Run(() =>
+            public async Task<string> CreateUserAsync(User user)
             {
-                return _sqlHelper.ExecuteReader<int>(query, (dataReader) =>
+                // Generate a new GUID for the user ID
+                string newUserId = Guid.NewGuid().ToString();
+            
+                string query = @"INSERT INTO tck.users (id, username, password, department_id) 
+                                VALUES (@id, @username, @password, @department_id)";
+
+                return await Task.Run(() =>
                 {
-                    int userId = 0;
-                    if (dataReader.Read())
-                    {
-                        userId = TypeHelper.GetInt32(dataReader[0]);
-                    }
-                    return userId;
-                },
-                _sqlHelper.CreateParam("@username", user.Username),
-                _sqlHelper.CreateParam("@password", user.Password),
-                _sqlHelper.CreateParam("@department_id", user.DepartmentId));
-            });
-        }
+                    int rowsAffected = _sqlHelper.ExecuteData(query,
+                        _sqlHelper.CreateParam("@username", user.Username),
+                        _sqlHelper.CreateParam("@password", user.Password),
+                        _sqlHelper.CreateParam("@id", Guid.Parse(newUserId)),
+                        _sqlHelper.CreateParam("@department_id", Guid.Parse(user.DepartmentId)));
+
+                    return rowsAffected > 0 ? user.Username : string.Empty;
+                });
+            }
 
         /// <summary>
         /// Updates an existing user in the database
@@ -177,10 +174,10 @@ namespace TicketingBE.DAL.Repositories
             return await Task.Run(() =>
             {
                 int rowsAffected = _sqlHelper.ExecuteData(query,
-                    _sqlHelper.CreateParam("@id", user.Id),
+                    _sqlHelper.CreateParam("@id", Guid.Parse(user.Id)),
                     _sqlHelper.CreateParam("@username", user.Username),
                     _sqlHelper.CreateParam("@password", user.Password),
-                    _sqlHelper.CreateParam("@department_id", user.DepartmentId));
+                    _sqlHelper.CreateParam("@department_id", Guid.Parse(user.DepartmentId)));
 
                 return rowsAffected > 0;
             });
@@ -189,14 +186,14 @@ namespace TicketingBE.DAL.Repositories
         /// <summary>
         /// Deletes a user from the database
         /// </summary>
-        public async Task<bool> DeleteUserAsync(int id)
+        public async Task<bool> DeleteUserAsync(string id)
         {
             string query = "DELETE FROM tck.users WHERE id = @id";
 
             return await Task.Run(() =>
             {
                 int rowsAffected = _sqlHelper.ExecuteData(query,
-                    _sqlHelper.CreateParam("@id", id));
+                    _sqlHelper.CreateParam("@id", Guid.Parse(id)));
 
                 return rowsAffected > 0;
             });
@@ -230,10 +227,10 @@ namespace TicketingBE.DAL.Repositories
                     {
                         user = new User
                         {
-                            Id = TypeHelper.GetGuid(dataReader["id"]),
+                            Id = TypeHelper.GetGuidAsString(dataReader["id"]),
                             Username = TypeHelper.GetString(dataReader["username"]),
                             Password = TypeHelper.GetString(dataReader["password"]),
-                            DepartmentId = TypeHelper.GetGuid(dataReader["department_id"]),
+                            DepartmentId = TypeHelper.GetGuidAsString(dataReader["department_id"]),
                             DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
                             DepartmentType = TypeHelper.GetString(dataReader["department_type"])
                         };
