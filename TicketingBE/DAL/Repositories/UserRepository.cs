@@ -19,11 +19,21 @@ namespace TicketingBE.DAL.Repositories
         }
 
         /// <summary>
-        /// Retrieves all users from the database
+        /// Retrieves all users from the database with their department information
         /// </summary>
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
-            string query = "SELECT id, username, email, full_name, created_at, is_active FROM users";
+            string query = @"
+                SELECT 
+                    u.id, 
+                    u.username, 
+                    u.password,
+                    u.department_id,
+                    d.name as department_name,
+                    dt.name as department_type
+                FROM tck.users u
+                INNER JOIN tck.departments d ON u.department_id = d.id
+                INNER JOIN tck.department_types dt ON d.department_type_id = dt.id";
 
             return await Task.Run(() =>
             {
@@ -34,12 +44,12 @@ namespace TicketingBE.DAL.Repositories
                     {
                         users.Add(new User
                         {
-                            Id = TypeHelper.GetInt32(dataReader["id"]),
+                            Id = TypeHelper.GetGuid(dataReader["id"]),
                             Username = TypeHelper.GetString(dataReader["username"]),
-                            Email = TypeHelper.GetString(dataReader["email"]),
-                            FullName = TypeHelper.GetString(dataReader["full_name"]),
-                            CreatedAt = TypeHelper.GetDateTime(dataReader["created_at"]),
-                            IsActive = TypeHelper.GetBoolean(dataReader["is_active"])
+                            Password = TypeHelper.GetString(dataReader["password"]),
+                            DepartmentId = TypeHelper.GetGuid(dataReader["department_id"]),
+                            DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
+                            DepartmentType = TypeHelper.GetString(dataReader["department_type"])
                         });
                     }
                     return users;
@@ -48,11 +58,22 @@ namespace TicketingBE.DAL.Repositories
         }
 
         /// <summary>
-        /// Retrieves a specific user by their ID
+        /// Retrieves a specific user by their ID with department information
         /// </summary>
         public async Task<User?> GetUserByIdAsync(int id)
         {
-            string query = "SELECT id, username, email, full_name, created_at, is_active FROM users WHERE id = @id";
+            string query = @"
+                SELECT 
+                    u.id, 
+                    u.username, 
+                    u.password,
+                    u.department_id,
+                    d.name as department_name,
+                    dt.name as department_type
+                FROM tck.users u
+                INNER JOIN tck.departments d ON u.department_id = d.id
+                INNER JOIN tck.department_types dt ON d.department_type_id = dt.id
+                WHERE u.id = @id";
 
             return await Task.Run(() =>
             {
@@ -63,12 +84,12 @@ namespace TicketingBE.DAL.Repositories
                     {
                         user = new User
                         {
-                            Id = TypeHelper.GetInt32(dataReader["id"]),
+                            Id = TypeHelper.GetGuid(dataReader["id"]),
                             Username = TypeHelper.GetString(dataReader["username"]),
-                            Email = TypeHelper.GetString(dataReader["email"]),
-                            FullName = TypeHelper.GetString(dataReader["full_name"]),
-                            CreatedAt = TypeHelper.GetDateTime(dataReader["created_at"]),
-                            IsActive = TypeHelper.GetBoolean(dataReader["is_active"])
+                            Password = TypeHelper.GetString(dataReader["password"]),
+                            DepartmentId = TypeHelper.GetGuid(dataReader["department_id"]),
+                            DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
+                            DepartmentType = TypeHelper.GetString(dataReader["department_type"])
                         };
                     }
                     return user;
@@ -77,11 +98,22 @@ namespace TicketingBE.DAL.Repositories
         }
 
         /// <summary>
-        /// Retrieves a user by their email address
+        /// Retrieves a user by their username with department information
         /// </summary>
         public async Task<User?> GetUserByEmailAsync(string email)
         {
-            string query = "SELECT id, username, email, full_name, created_at, is_active FROM users WHERE email = @email";
+            string query = @"
+                SELECT 
+                    u.id, 
+                    u.username, 
+                    u.password,
+                    u.department_id,
+                    d.name as department_name,
+                    dt.name as department_type
+                FROM tck.users u
+                INNER JOIN tck.departments d ON u.department_id = d.id
+                INNER JOIN tck.department_types dt ON d.department_type_id = dt.id
+                WHERE u.username = @username";
 
             return await Task.Run(() =>
             {
@@ -92,16 +124,16 @@ namespace TicketingBE.DAL.Repositories
                     {
                         user = new User
                         {
-                            Id = TypeHelper.GetInt32(dataReader["id"]),
+                            Id = TypeHelper.GetGuid(dataReader["id"]),
                             Username = TypeHelper.GetString(dataReader["username"]),
-                            Email = TypeHelper.GetString(dataReader["email"]),
-                            FullName = TypeHelper.GetString(dataReader["full_name"]),
-                            CreatedAt = TypeHelper.GetDateTime(dataReader["created_at"]),
-                            IsActive = TypeHelper.GetBoolean(dataReader["is_active"])
+                            Password = TypeHelper.GetString(dataReader["password"]),
+                            DepartmentId = TypeHelper.GetGuid(dataReader["department_id"]),
+                            DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
+                            DepartmentType = TypeHelper.GetString(dataReader["department_type"])
                         };
                     }
                     return user;
-                }, _sqlHelper.CreateParam("@email", email));
+                }, _sqlHelper.CreateParam("@username", email));
             });
         }
 
@@ -110,8 +142,8 @@ namespace TicketingBE.DAL.Repositories
         /// </summary>
         public async Task<int> CreateUserAsync(User user)
         {
-            string query = @"INSERT INTO users (username, email, full_name, created_at, is_active) 
-                            VALUES (@username, @email, @full_name, @created_at, @is_active)
+            string query = @"INSERT INTO tck.users (username, password, department_id) 
+                            VALUES (@username, @password, @department_id)
                             RETURNING id";
 
             return await Task.Run(() =>
@@ -126,10 +158,8 @@ namespace TicketingBE.DAL.Repositories
                     return userId;
                 },
                 _sqlHelper.CreateParam("@username", user.Username),
-                _sqlHelper.CreateParam("@email", user.Email),
-                _sqlHelper.CreateParam("@full_name", user.FullName),
-                _sqlHelper.CreateParam("@created_at", user.CreatedAt),
-                _sqlHelper.CreateParam("@is_active", user.IsActive));
+                _sqlHelper.CreateParam("@password", user.Password),
+                _sqlHelper.CreateParam("@department_id", user.DepartmentId));
             });
         }
 
@@ -138,11 +168,10 @@ namespace TicketingBE.DAL.Repositories
         /// </summary>
         public async Task<bool> UpdateUserAsync(User user)
         {
-            string query = @"UPDATE users 
+            string query = @"UPDATE tck.users 
                             SET username = @username, 
-                                email = @email, 
-                                full_name = @full_name, 
-                                is_active = @is_active 
+                                password = @password, 
+                                department_id = @department_id 
                             WHERE id = @id";
 
             return await Task.Run(() =>
@@ -150,9 +179,8 @@ namespace TicketingBE.DAL.Repositories
                 int rowsAffected = _sqlHelper.ExecuteData(query,
                     _sqlHelper.CreateParam("@id", user.Id),
                     _sqlHelper.CreateParam("@username", user.Username),
-                    _sqlHelper.CreateParam("@email", user.Email),
-                    _sqlHelper.CreateParam("@full_name", user.FullName),
-                    _sqlHelper.CreateParam("@is_active", user.IsActive));
+                    _sqlHelper.CreateParam("@password", user.Password),
+                    _sqlHelper.CreateParam("@department_id", user.DepartmentId));
 
                 return rowsAffected > 0;
             });
@@ -163,7 +191,7 @@ namespace TicketingBE.DAL.Repositories
         /// </summary>
         public async Task<bool> DeleteUserAsync(int id)
         {
-            string query = "DELETE FROM users WHERE id = @id";
+            string query = "DELETE FROM tck.users WHERE id = @id";
 
             return await Task.Run(() =>
             {
@@ -171,6 +199,49 @@ namespace TicketingBE.DAL.Repositories
                     _sqlHelper.CreateParam("@id", id));
 
                 return rowsAffected > 0;
+            });
+        }
+
+        /// <summary>
+        /// Authenticates a user by username and password
+        /// Joins users, departments, and department_types tables to get complete user information
+        /// </summary>
+        public async Task<User?> AuthenticateUserAsync(string username, string password)
+        {
+            string query = @"
+                SELECT 
+                    u.id, 
+                    u.username, 
+                    u.password,
+                    u.department_id,
+                    d.name as department_name,
+                    dt.name as department_type
+                FROM tck.users u
+                INNER JOIN tck.departments d ON u.department_id = d.id
+                INNER JOIN tck.department_types dt ON d.department_type_id = dt.id
+                WHERE u.username = @username AND u.password = @password";
+
+            return await Task.Run(() =>
+            {
+                return _sqlHelper.ExecuteReader<User?>(query, (dataReader) =>
+                {
+                    User? user = null;
+                    if (dataReader.Read())
+                    {
+                        user = new User
+                        {
+                            Id = TypeHelper.GetGuid(dataReader["id"]),
+                            Username = TypeHelper.GetString(dataReader["username"]),
+                            Password = TypeHelper.GetString(dataReader["password"]),
+                            DepartmentId = TypeHelper.GetGuid(dataReader["department_id"]),
+                            DepartmentName = TypeHelper.GetString(dataReader["department_name"]),
+                            DepartmentType = TypeHelper.GetString(dataReader["department_type"])
+                        };
+                    }
+                    return user;
+                },
+                _sqlHelper.CreateParam("@username", username),
+                _sqlHelper.CreateParam("@password", password));
             });
         }
     }

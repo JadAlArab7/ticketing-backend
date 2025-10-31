@@ -1,4 +1,5 @@
 using TicketingBE.Models;
+using TicketingBE.Models.DTOs;
 
 namespace TicketingBE.BLL.Interfaces
 {
@@ -55,5 +56,12 @@ namespace TicketingBE.BLL.Interfaces
         /// <param name="id">The unique identifier of the user to delete</param>
         /// <returns>True if the deletion was successful, false otherwise</returns>
         Task<bool> DeleteUserAsync(int id);
+
+        /// <summary>
+        /// Authenticates a user and generates a JWT token
+        /// </summary>
+        /// <param name="request">The login credentials (username and password)</param>
+        /// <returns>LoginResponseDto with user info and token if successful, null otherwise</returns>
+        Task<LoginResponseDto?> LoginAsync(LoginRequestDto request);
     }
 }

@@ -1,6 +1,11 @@
 using TicketingBE.BLL.Interfaces;
 using TicketingBE.DAL.Interfaces;
 using TicketingBE.Models;
+using TicketingBE.Models.DTOs;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace TicketingBE.BLL.Services
 {
@@ -12,28 +17,28 @@ namespace TicketingBE.BLL.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly ILogger<UserService> _logger;
+        private readonly IConfiguration _configuration;
 
-        public UserService(IUserRepository userRepository, ILogger<UserService> logger)
+        public UserService(IUserRepository userRepository, ILogger<UserService> logger, IConfiguration configuration)
         {
             _userRepository = userRepository;
             _logger = logger;
+            _configuration = configuration;
         }
 
         /// <summary>
-        /// Retrieves all active users
-        /// Business Rule: Only return users with IsActive = true
+        /// Retrieves all users
         /// </summary>
         public async Task<IEnumerable<User>> GetAllActiveUsersAsync()
         {
             try
             {
                 var allUsers = await _userRepository.GetAllUsersAsync();
-                // Business logic: Filter only active users
-                return allUsers.Where(u => u.IsActive);
+                return allUsers;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving active users");
+                _logger.LogError(ex, "Error retrieving users");
                 throw;
             }
         }
@@ -84,7 +89,7 @@ namespace TicketingBE.BLL.Services
 
         /// <summary>
         /// Creates a new user with validation
-        /// Business Rules: Validate email uniqueness, required fields, and set default values
+        /// Business Rules: Validate required fields, username uniqueness, department assignment
         /// </summary>
         public async Task<int> CreateUserAsync(User user)
         {
@@ -94,24 +99,16 @@ namespace TicketingBE.BLL.Services
                 if (string.IsNullOrWhiteSpace(user.Username))
                     throw new ArgumentException("Username is required");
 
-                if (string.IsNullOrWhiteSpace(user.Email))
-                    throw new ArgumentException("Email is required");
+                if (string.IsNullOrWhiteSpace(user.Password))
+                    throw new ArgumentException("Password is required");
 
-                if (string.IsNullOrWhiteSpace(user.FullName))
-                    throw new ArgumentException("Full name is required");
+                if (user.DepartmentId == Guid.Empty)
+                    throw new ArgumentException("Department is required");
 
-                // Business rule: Validate email format
-                if (!IsValidEmail(user.Email))
-                    throw new ArgumentException("Invalid email format");
-
-                // Business rule: Check if email already exists
-                var existingUser = await _userRepository.GetUserByEmailAsync(user.Email);
+                // Business rule: Check if username already exists
+                var existingUser = await _userRepository.GetUserByEmailAsync(user.Username);
                 if (existingUser != null)
-                    throw new InvalidOperationException("A user with this email already exists");
-
-                // Business rule: Set default values
-                user.CreatedAt = DateTime.UtcNow;
-                user.IsActive = true;
+                    throw new InvalidOperationException("A user with this username already exists");
 
                 var userId = await _userRepository.CreateUserAsync(user);
                 _logger.LogInformation("User created successfully with ID: {UserId}", userId);
@@ -127,38 +124,29 @@ namespace TicketingBE.BLL.Services
 
         /// <summary>
         /// Updates an existing user with validation
-        /// Business Rules: Validate email uniqueness (excluding current user), required fields
+        /// Business Rules: Validate username uniqueness (excluding current user), required fields
         /// </summary>
         public async Task<bool> UpdateUserAsync(User user)
         {
             try
             {
                 // Business rule: Validate required fields
-                if (user.Id <= 0)
+                if (user.Id == Guid.Empty)
                     throw new ArgumentException("Invalid user ID");
 
                 if (string.IsNullOrWhiteSpace(user.Username))
                     throw new ArgumentException("Username is required");
 
-                if (string.IsNullOrWhiteSpace(user.Email))
-                    throw new ArgumentException("Email is required");
+                if (string.IsNullOrWhiteSpace(user.Password))
+                    throw new ArgumentException("Password is required");
 
-                if (string.IsNullOrWhiteSpace(user.FullName))
-                    throw new ArgumentException("Full name is required");
+                if (user.DepartmentId == Guid.Empty)
+                    throw new ArgumentException("Department is required");
 
-                // Business rule: Validate email format
-                if (!IsValidEmail(user.Email))
-                    throw new ArgumentException("Invalid email format");
-
-                // Business rule: Check if user exists
-                var existingUser = await _userRepository.GetUserByIdAsync(user.Id);
-                if (existingUser == null)
-                    throw new InvalidOperationException("User not found");
-
-                // Business rule: Check if email is already taken by another user
-                var userWithEmail = await _userRepository.GetUserByEmailAsync(user.Email);
-                if (userWithEmail != null && userWithEmail.Id != user.Id)
-                    throw new InvalidOperationException("Email is already in use by another user");
+                // Business rule: Check if username is already taken by another user
+                var userWithUsername = await _userRepository.GetUserByEmailAsync(user.Username);
+                if (userWithUsername != null && userWithUsername.Id != user.Id)
+                    throw new InvalidOperationException("Username is already in use by another user");
 
                 var result = await _userRepository.UpdateUserAsync(user);
                 _logger.LogInformation("User updated successfully: {UserId}", user.Id);
@@ -173,8 +161,7 @@ namespace TicketingBE.BLL.Services
         }
 
         /// <summary>
-        /// Soft deletes a user (marks as inactive)
-        /// Business Rule: Don't permanently delete, just deactivate
+        /// Deactivates a user (deprecated - included for interface compatibility)
         /// </summary>
         public async Task<bool> DeactivateUserAsync(int id)
         {
@@ -183,16 +170,9 @@ namespace TicketingBE.BLL.Services
                 if (id <= 0)
                     throw new ArgumentException("Invalid user ID");
 
-                var user = await _userRepository.GetUserByIdAsync(id);
-                if (user == null)
-                    throw new InvalidOperationException("User not found");
-
-                // Business rule: Soft delete - set IsActive to false
-                user.IsActive = false;
-                var result = await _userRepository.UpdateUserAsync(user);
-
-                _logger.LogInformation("User deactivated successfully: {UserId}", id);
-                return result;
+                // Note: Current schema doesn't support soft delete
+                _logger.LogWarning("Deactivate user called but not implemented for current schema: {UserId}", id);
+                return await Task.FromResult(false);
             }
             catch (Exception ex)
             {
@@ -239,6 +219,86 @@ namespace TicketingBE.BLL.Services
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Authenticates a user and generates a JWT token
+        /// </summary>
+        public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto request)
+        {
+            try
+            {
+                // Validate input
+                if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+                {
+                    _logger.LogWarning("Login attempt with empty username or password");
+                    return null;
+                }
+
+                // Authenticate user
+                var user = await _userRepository.AuthenticateUserAsync(request.Username, request.Password);
+                
+                if (user == null)
+                {
+                    _logger.LogWarning("Failed login attempt for username: {Username}", request.Username);
+                    return null;
+                }
+
+                // Generate JWT token
+                var token = GenerateJwtToken(user);
+
+                _logger.LogInformation("Successful login for user: {Username}", user.Username);
+
+                // Map to response DTO
+                return new LoginResponseDto
+                {
+                    Id = user.Id,
+                    Username = user.Username,
+                    DepartmentName = user.DepartmentName,
+                    DepartmentType = user.DepartmentType,
+                    Token = token
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during login for username: {Username}", request.Username);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Generates a JWT token for authenticated user
+        /// </summary>
+        private string GenerateJwtToken(User user)
+        {
+            var jwtSettings = _configuration.GetSection("JwtSettings");
+            var secretKey = jwtSettings["SecretKey"];
+            var issuer = jwtSettings["Issuer"];
+            var audience = jwtSettings["Audience"];
+            var expirationMinutes = int.Parse(jwtSettings["ExpirationMinutes"] ?? "60");
+
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("userId", user.Id.ToString()),
+                new Claim("username", user.Username),
+                new Claim("department", user.DepartmentName),
+                new Claim("departmentType", user.DepartmentType)
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: issuer,
+                audience: audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(expirationMinutes),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

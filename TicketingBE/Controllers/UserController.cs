@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TicketingBE.BLL.Interfaces;
 using TicketingBE.Models;
+using TicketingBE.Models.DTOs;
 
 namespace TicketingBE.Controllers
 {
@@ -122,7 +123,7 @@ namespace TicketingBE.Controllers
         /// Updates an existing user
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateUser(int id, [FromBody] User user)
+        public async Task<ActionResult> UpdateUser(Guid id, [FromBody] User user)
         {
             try
             {
@@ -211,6 +212,32 @@ namespace TicketingBE.Controllers
             {
                 _logger.LogError(ex, "Error deleting user with ID: {UserId}", id);
                 return StatusCode(500, "An error occurred while deleting the user");
+            }
+        }
+
+        /// <summary>
+        /// POST: api/User/login
+        /// Authenticates a user and returns a JWT token
+        /// </summary>
+        [HttpPost("login")]
+        public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginRequestDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var response = await _userService.LoginAsync(request);
+
+                if (response == null)
+                    return Unauthorized("Invalid username or password");
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during login");
+                return StatusCode(500, "An error occurred during login");
             }
         }
     }

@@ -48,5 +48,13 @@ namespace TicketingBE.DAL.Interfaces
         /// <param name="id">The unique identifier of the user to delete</param>
         /// <returns>True if the deletion was successful, false otherwise</returns>
         Task<bool> DeleteUserAsync(int id);
+
+        /// <summary>
+        /// Authenticates a user by username and password
+        /// </summary>
+        /// <param name="username">The username</param>
+        /// <param name="password">The password</param>
+        /// <returns>The user with department information if authentication successful, null otherwise</returns>
+        Task<User?> AuthenticateUserAsync(string username, string password);
     }
 }
