@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TicketingBE.BLL.Interfaces;
 using TicketingBE.Models.DTOs;
@@ -175,6 +176,44 @@ namespace TicketingBE.Controllers
             {
                 _logger.LogError(ex, "Error occurred while updating ticket with ID {TicketId}", id);
                 return StatusCode(500, new { message = "An error occurred while updating the ticket" });
+            }
+        }
+
+        /// <summary>
+        /// Update the status of an existing ticket
+        /// </summary>
+        /// <param name="ticketId">Ticket ID</param>
+        /// <param name="nextStatusId">Desired next status ID</param>
+        /// <returns>Updated ticket details</returns>
+        [HttpPut("update-status/{ticketId}/{nextStatusId}")]
+        public async Task<IActionResult> UpdateTicketStatus(string ticketId, string nextStatusId)
+        {
+            try
+            {
+                var updatedTicket = await _ticketService.UpdateTicketStatusAsync(ticketId, nextStatusId);
+                return Ok(updatedTicket);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Unauthorized attempt to update status for ticket with ID {TicketId}", ticketId);
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating status for ticket with ID {TicketId}", ticketId);
+                return StatusCode(500, new { message = "An error occurred while updating the ticket status" });
             }
         }
 

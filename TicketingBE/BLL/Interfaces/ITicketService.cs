@@ -11,6 +11,7 @@ namespace TicketingBE.BLL.Interfaces
         Task<TicketDetailDto?> GetTicketByIdAsync(string id);
         Task<string> CreateTicketAsync(CreateTicketDto ticket);
         Task<bool> UpdateTicketAsync(UpdateTicketDto ticket);
+        Task<TicketDetailDto> UpdateTicketStatusAsync(string ticketId, string nextStatusId);
         Task<bool> DeleteTicketAsync(string id);
     }
 }

@@ -12,6 +12,9 @@ namespace TicketingBE.DAL.Interfaces
         Task<TicketDetailDto?> GetTicketByIdAsync(string id);
         Task<string> CreateTicketAsync(CreateTicketDto ticket, string createdBy);
         Task<bool> UpdateTicketAsync(UpdateTicketDto ticket);
+        Task<bool> IsDepartmentAuthorizedForTicketAsync(string ticketId, string departmentId);
+        Task<bool> UpdateTicketStatusAsync(string ticketId, string currentStatusId, string nextStatusId);
+        Task<bool> IsValidStatusTransitionAsync(string ticketTypeId, string currentStatusId, string nextStatusId);
         Task<bool> DeleteTicketAsync(string id);
     }
 }

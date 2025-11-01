@@ -1,3 +1,4 @@
+using System.Linq;
 using Npgsql;
 using TicketingBE.DAL.Helpers;
 using TicketingBE.DAL.Interfaces;
@@ -305,6 +306,85 @@ namespace TicketingBE.DAL.Repositories
             }
         }
 
+
+        public async Task<bool> IsDepartmentAuthorizedForTicketAsync(string ticketId, string departmentId)
+        {
+            try
+            {
+                string query = @"
+                    SELECT COUNT(*) AS count
+                    FROM tck.ticket_assignees
+                    WHERE ticket_id = @ticket_id AND department_id = @department_id";
+
+                var parameters = new[]
+                {
+                    _sqlHelper.CreateParam("@ticket_id", Guid.Parse(ticketId)),
+                    _sqlHelper.CreateParam("@department_id", Guid.Parse(departmentId))
+                };
+
+                var result = await _sqlHelper.ExecuteReaderAsync(query, reader => reader.GetInt64(0), parameters);
+                return result.FirstOrDefault() > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while checking authorization for ticket {TicketId} and department {DepartmentId}", ticketId, departmentId);
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateTicketStatusAsync(string ticketId, string currentStatusId, string nextStatusId)
+        {
+            try
+            {
+                string query = @"
+                    UPDATE tck.tickets
+                    SET ticket_status = @next_status
+                    WHERE id = @ticket_id AND ticket_status = @current_status";
+
+                var parameters = new[]
+                {
+                    _sqlHelper.CreateParam("@ticket_id", Guid.Parse(ticketId)),
+                    _sqlHelper.CreateParam("@current_status", Guid.Parse(currentStatusId)),
+                    _sqlHelper.CreateParam("@next_status", Guid.Parse(nextStatusId))
+                };
+
+                int rowsAffected = await _sqlHelper.ExecuteNonQueryAsync(query, parameters);
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating status for ticket {TicketId}", ticketId);
+                throw;
+            }
+        }
+
+        public async Task<bool> IsValidStatusTransitionAsync(string ticketTypeId, string currentStatusId, string nextStatusId)
+        {
+            try
+            {
+                string query = @"
+                    SELECT COUNT(*)
+                    FROM tck.ticket_status_transitions
+                    WHERE ticket_type_id = @ticket_type_id
+                      AND from_status = @from_status
+                      AND to_status = @to_status";
+
+                var parameters = new[]
+                {
+                    _sqlHelper.CreateParam("@ticket_type_id", Guid.Parse(ticketTypeId)),
+                    _sqlHelper.CreateParam("@from_status", Guid.Parse(currentStatusId)),
+                    _sqlHelper.CreateParam("@to_status", Guid.Parse(nextStatusId))
+                };
+
+                var result = await _sqlHelper.ExecuteReaderAsync(query, reader => reader.GetInt64(0), parameters);
+                return result.FirstOrDefault() > 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while validating status transition for ticket type {TicketTypeId}", ticketTypeId);
+                throw;
+            }
+        }
         public async Task<bool> DeleteTicketAsync(string id)
         {
             NpgsqlConnection? connection = null;
